@@ -207,28 +207,50 @@ class EllipticCurve:
         return sum
 
     # sped up multiplication
-    # def mult(self, point, k):
+    def multP(self, point, k):
 
-    #     if k == 1: return point
+        if k == 1: return point
 
-    #     else:
+        else:
 
-    #         temp = point
-    #         doubles = 0
+            temp = point
+            doubles = 0
 
-    #         while 2**doubles < k:
+            while True:
 
-    #             temp = self.add(temp, temp)
-    #             doubles += 1
+                doubles += 1
+                if 2**doubles >= k: 
+                    doubles -=1
+                    break
+             
+                temp = self.add(temp, temp)
 
-    #         l = k - 2**doubles 
+            #doubles -= 1              
 
-    #         while l > 0:
+            l = k - 2**doubles 
+            print("Doubles is", 2**doubles)
+            print("Difference is", l)
+            while l > 0:
 
-    #             temp = self.add(temp, point)
-    #             l -= 1
+                temp = self.add(temp, point)
+                l -= 1
 
-    #     return temp
+        return temp
+
+
+    def pointOrder(self, point):
+
+        answer = (0, 1, 0)
+        count = 0
+
+        while True:
+
+            answer = self.add(answer, point)
+            #print(count, answer, test.onCurve(answer))
+            count += 1
+            if answer == (0, 1, 0): break      
+
+        return count
 
 
 
