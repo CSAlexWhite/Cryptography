@@ -145,6 +145,14 @@ class EllipticCurve:
         self.b = b
         self.mod = mod
 
+
+    def neg(self, point):
+
+        if point == (0, 1, 0): return (0, 1, 0)
+
+        return point[0], (-1 * point[1]) % self.mod, 1
+
+
     def onCurve(self, point):
 
         if len(point) < 3:
@@ -206,9 +214,12 @@ class EllipticCurve:
 
         return sum
 
-    # sped up multiplication
+    # recursive repeated addition via doubling
+    # doubles until next doubling would exceed k
+    # then calls itself on the difference until 1 left
     def multP(self, point, k):
 
+        if k == 0: return (0, 1, 0)
         if k == 1: return point
 
         else:
@@ -220,20 +231,14 @@ class EllipticCurve:
 
                 doubles += 1
                 if 2**doubles >= k: 
-                    doubles -=1
+                    doubles -= 1
                     break
-             
-                temp = self.add(temp, temp)
 
-            #doubles -= 1              
+                temp = self.add(temp, temp)             
 
-            l = k - 2**doubles 
-            print("Doubles is", 2**doubles)
-            print("Difference is", l)
-            while l > 0:
+            leftovers = k - 2**doubles
 
-                temp = self.add(temp, point)
-                l -= 1
+            temp = self.add(temp, self.multP(point, leftovers))
 
         return temp
 
@@ -251,6 +256,33 @@ class EllipticCurve:
             if answer == (0, 1, 0): break      
 
         return count
+
+
+    def bsgsPointOrder(self, point):
+
+        p = self.mod
+        m = p + 1 - 2*(p**(1/2))
+        z = math.ceil(2*(p**(1/4)))
+        m, z = int(m), int(z)
+        mP = self.multP(point,m)
+
+        babyList = list()
+        giantList = list()
+        answerList = list()
+
+        for i in range(z):
+
+            babyList.append(self.multP(point,i))
+            giantList.append(self.neg(self.add(mP, self.multP(point,i))))
+
+        for i in range(z):
+            for j in range(z):
+                if babyList[i] == giantList[j]:
+                    answerList.append(m + i + j)
+
+        return answerList
+
+
 
 
 
