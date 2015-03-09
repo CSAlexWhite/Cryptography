@@ -63,7 +63,7 @@ def legendre(a, p):
 # returns the modular square root of a number if it exists
 def sqrtMod(a, mod):
 
-    if not isQR(a, mod): return False
+    if not isQR(a, mod): return []
 
     answerList = list()
     singleList = list(range(0, mod))
@@ -77,53 +77,62 @@ def sqrtMod(a, mod):
 
 
 # a faster implementation, Tonnelli-Shanks, mod a prime (credit to StackExchange)
-def sqrtModP(a, p):
+def legendre(a, p):
 
-    roots = list()
+    symbol = pow(a, int((p - 1)/2), p)
+    if symbol == p - 1:
+        return -1
+    return symbol
+
+def sqrtModP(a, p):
 
     a %= p
 
-    if a==0: return [0]
-    if p==2: return [a]
+    # Simple case
+    if a == 0: return [0]
+    if p == 2: return [a]
 
-    if legendre(a, p) != 1: return roots()
+    # Check solution existence on odd prime
+    if legendre(a, p) != 1:
+        return []
 
-    if p%4 == 3:
-            x = pow(a, int((p+1)/4), p)
-            return [x, p-x]
+    # Simple case
+    if p % 4 == 3:
+        x = pow(a, int((p + 1))/4, p)
+        return [x, p-x]
 
-    q, s = p-1, 0
-    while q%2 == 0:
+    # Factor p-1 on the form q * 2^s (with Q odd)
+    q, s = p - 1, 0
+    while q % 2 == 0:
         s += 1
-        q //=2
+        q //= 2
 
+    # Select a z which is a quadratic non resudue modulo p
     z = 1
     while legendre(z, p) != -1:
         z += 1
-    c = pow(z, int(q), p)
+    c = pow(z, q, p)
 
-    x = pow(a, int((q+1)/2), p)
-    t = pow(a, int(q), p)
+    # Search for a solution
+    x = pow(a, int((q + 1)/2), p)
+    t = pow(a, q, p)
     m = s
-
     while t != 1:
-
+        # Find the lowest i such that t^(2^i) = 1
         i, e = 0, 2
-
-        for i in xrange(1, m):
+        for i in range(1, m):
             if pow(t, e, p) == 1:
                 break
             e *= 2
 
-        b = pow(int(c), int(2**(m-i-1)), p)
-        x = (x*b)%p
-        t = (t*b*b)%p
-        c = (b*b)*p
+        # Update next value to iterate
+        b = pow(c, 2**(m - i - 1), p)
+        x = (x * b) % p
+        t = (t * b * b) % p
+        c = (b * b) % p
         m = i
 
     return [x, p-x]
-
-
 
 
 ####### ELLIPTIC CURVE CLASS #######
@@ -136,33 +145,94 @@ class EllipticCurve:
         self.b = b
         self.mod = mod
 
-    def onCurve(point):
+    def onCurve(self, point):
 
-        if y in sqrtMod(x**3 + a*x + b, mod): return True
+        if len(point) < 3:
+            print("Point must be a triple.")
+            return
+
+        if point[2] == 0: return True
+
+        x, y = point[0], point[1]
+
+        if y in sqrtModP(x**3 + self.a*x + self.b, self.mod): return True
 
         return False
 
-    def add(point1, point2):
 
-        if not onCurve(point1): return False
-        if not onCurve(point2): return False
+    def add(self, point1, point2):
+
+        if len(point1) < 3 or len(point2) < 3:
+            print("Point must be a triple.")
+            return
+
+        if not self.onCurve(point1): return False
+        if not self.onCurve(point2): return False
+
+        # anything times the identity is itself
+        if point1[2] == 0: return point2
+        if point2[2] == 0: return point1
+
+        # the identity times the identity is itself
+        if point1[2] == 0 and point2[2] == 0: return (0, 1, 0)
+
+        if point1 != point2:
+
+            if point1[0] != point2[0]:
+
+                slope = (point2[1] - point1[1]) * modinv(point2[0] - point1[0], self.mod)
+
+            else: return (0, 1, 0)
 
         if point1 == point2:
-            slope = (3*[point1[0] + a]) * modinv(2*point1[1])
 
-        else:
-            slope = (point2[1] - point1[1]) * modinv(point2[0] - point1[0])
+            slope = (3*(point1[0]**2) + self.a) * modinv(2*point1[1], self.mod)          
 
-        x3 = slope**2 - point1[0] - point2[0]
-        y3 = slope * (point1[0] - x3) - point1[1]
+        x3 = (slope**2 - point1[0] - point2[0]) % self.mod
+        y3 = (slope * (point1[0] - x3) - point1[1]) % self.mod
 
-        return (x3, y3)
+        return (x3, y3, 1)
 
-    # def mult(point, k):
 
-    #   if k == 1: return point
+    def mult(self, point, k):
 
-    #   else:
+        if k == 1: return point
+
+        sum = (0, 1, 0)
+
+        for i in range(k):
+
+            sum = self.add(sum, point)
+
+        return sum
+
+    # sped up multiplication
+    # def mult(self, point, k):
+
+    #     if k == 1: return point
+
+    #     else:
+
+    #         temp = point
+    #         doubles = 0
+
+    #         while 2**doubles < k:
+
+    #             temp = self.add(temp, temp)
+    #             doubles += 1
+
+    #         l = k - 2**doubles 
+
+    #         while l > 0:
+
+    #             temp = self.add(temp, point)
+    #             l -= 1
+
+    #     return temp
+
+
+
+
 
 
 
