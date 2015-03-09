@@ -98,7 +98,7 @@ def sqrtModP(a, p):
 
     # Simple case
     if p % 4 == 3:
-        x = pow(a, int((p + 1))/4, p)
+        x = pow(a, int((p + 1)/4), p)
         return [x, p-x]
 
     # Factor p-1 on the form q * 2^s (with Q odd)
@@ -144,6 +144,7 @@ class EllipticCurve:
         self.a = a
         self.b = b
         self.mod = mod
+        print("E: y^2 = x^3 +", a, "x +", b)
 
 
     def neg(self, point):
@@ -242,7 +243,7 @@ class EllipticCurve:
 
         return temp
 
-
+    # this works, slowly
     def pointOrder(self, point):
 
         answer = (0, 1, 0)
@@ -257,28 +258,32 @@ class EllipticCurve:
 
         return count
 
-
+    # this doesn't yet
     def bsgsPointOrder(self, point):
 
         p = self.mod
-        m = p + 1 - 2*(p**(1/2))
+        m = p + 1 - math.ceil(2*(p**(1/2)))
         z = math.ceil(2*(p**(1/4)))
         m, z = int(m), int(z)
         mP = self.multP(point,m)
-
+        
         babyList = list()
         giantList = list()
         answerList = list()
+        matchList = list()
 
         for i in range(z):
 
             babyList.append(self.multP(point,i))
-            giantList.append(self.neg(self.add(mP, self.multP(point,i))))
+            giantList.append(self.neg(self.add(mP, self.multP(point,i*z))))
 
         for i in range(z):
             for j in range(z):
                 if babyList[i] == giantList[j]:
-                    answerList.append(m + i + j)
+                    answerList.append(m + i + j*z)
+                    matchList.append((babyList[i], giantList[i]))
+
+        for i in matchList: print(i)
 
         return answerList
 
