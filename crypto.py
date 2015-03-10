@@ -173,6 +173,16 @@ def groupPrimes(n):
 
     return groups
 
+def chinese_remainder(mods, exes, lena):
+
+    p = i = prod = 1; sm = 0
+
+    for i in range(lena): prod *= mods[i]
+    for i in range(lena):
+        p = prod / mods[i]
+        sm += exes[i] * modinv(p, mods[i]) * p
+    return sm % prod
+
 
 ####### ELLIPTIC CURVE CLASS #######
 
@@ -336,15 +346,22 @@ class EllipticCurve:
 
         factors = groupPrimes(N)
 
+        mods = list()
+        exes = list()
+
+        for n in factors:
+
+            mods.append(n[0]**n[1])
+
         for q in factors:
 
-            print("***********************")
-            print("factor =", q)
+            print("\n***********************")
+            #print("factor =", q)
 
             T = list()
             Ks = list()
             Q = originalQ
-            print("Q =", Q)
+            #print("Q =", Q)
 
             e = q[1]    # the power of the prime factor
 
@@ -352,23 +369,23 @@ class EllipticCurve:
 
                 T.append(self.multP(P, j*(N/q[0])))     # create list (1)
 
-            print("T", T)
+            print("T:", T)
 
             for i in range(1, e+1):   # for each k (mod q)
 
                 candidate = self.multP(Q, N/(q[0]**i))   # calculate candidate (2)
 
-                print("candidate is N/", q[0]**i, "*", Q, "=", candidate)
+                #print("candidate is N/", q[0]**i, "*", Q, "=", candidate)
 
                 K = T.index(candidate)
 
-                print("index is", K)
+                #print("index is", K)
 
                 Ks.append(K)   # add to the list of ks ()
 
                 Q = self.add(Q, self.neg(self.multP(P, K*q[0]**(i-1)))) ##!!
 
-                print("Q1 is", Q, "-", K, "*",q[0], "^", i-1, "*", P)
+                print("Q", i, " is", Q, "-", K, "*",q[0], "^", i-1, "*", P)
 
             sum = 0
             for k in Ks:
@@ -377,7 +394,15 @@ class EllipticCurve:
                 sum %= q[0]**q[1]
 
             print(sum, "mod ", q[0]**q[1], "= ", sum)
+            exes.append(sum)
 
+        print("\n***********************")
+        print("SYSTEM:")
+
+        print("X VALUES:\t", exes)
+        print("MOD VALUES:\t", mods)
+
+        print("ANSWER:\t\t", chinese_remainder(mods, exes, len(exes)))
 
 
 
