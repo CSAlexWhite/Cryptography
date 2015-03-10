@@ -134,6 +134,45 @@ def sqrtModP(a, p):
 
     return [x, p-x]
 
+# returns a list of prime factors
+def primeFactors(n):
+
+    primes = list()
+
+    d = 2
+    while d*d <= n:
+        while (n%d) == 0:
+            primes.append(d)
+            n//=d
+        d+=1
+
+    if n>1:
+        primes.append(n)
+
+    return primes
+
+
+def groupPrimes(n):
+
+    groups = list()
+    primes = primeFactors(n)
+
+    distincts = list(set(primes))
+
+    distincts.sort()
+
+    for i in distincts:
+
+        temp = 0
+        for j in primes:
+
+            if j == i:
+                temp += 1
+
+        groups.append((i, temp))
+
+    return groups
+
 
 ####### ELLIPTIC CURVE CLASS #######
 
@@ -144,7 +183,7 @@ class EllipticCurve:
         self.a = a
         self.b = b
         self.mod = mod
-        print("E: y^2 = x^3 +", a, "x +", b)
+        print("E: y^2 = x^3 +", a, "x +", b, "( mod", mod, ")")
 
 
     def neg(self, point):
@@ -258,15 +297,15 @@ class EllipticCurve:
 
         return count
 
-    # this doesn't yet
-    def bsgsPointOrder(self, point):
+
+    def bsgsGroupOrder(self, point):
 
         p = self.mod
         m = p + 1 - math.ceil(2*(p**(1/2)))
         z = math.ceil(2*(p**(1/4)))
         m, z = int(m), int(z)
         mP = self.multP(point,m)
-        
+
         babyList = list()
         giantList = list()
         answerList = list()
@@ -277,15 +316,77 @@ class EllipticCurve:
             babyList.append(self.multP(point,i))
             giantList.append(self.neg(self.add(mP, self.multP(point,i*z))))
 
-        for i in range(z):
-            for j in range(z):
-                if babyList[i] == giantList[j]:
-                    answerList.append(m + i + j*z)
-                    matchList.append((babyList[i], giantList[i]))
+        for i in babyList:
+            for j in giantList:
+                if i == j:
+                    answerList.append(m + babyList.index(i) + giantList.index(j)*z)
+                    matchList.append((i, j))
 
+        for i in range(len(babyList)): print(babyList[i], "\t", giantList[i])
+        print("ANSWER:")
         for i in matchList: print(i)
 
         return answerList
+
+
+    def pohlig_hellman(self, P, Q):
+
+        originalQ = Q
+        N = self.pointOrder(P)
+
+        factors = groupPrimes(N)
+
+        for q in factors:
+
+            print("***********************")
+            print("factor =", q)
+
+            T = list()
+            Ks = list()
+            Q = originalQ
+            print("Q =", Q)
+
+            e = q[1]    # the power of the prime factor
+
+            for j in range(q[0]):
+
+                T.append(self.multP(P, j*(N/q[0])))     # create list (1)
+
+            print("T", T)
+
+            for i in range(1, e+1):   # for each k (mod q)
+
+                candidate = self.multP(Q, N/(q[0]**i))   # calculate candidate (2)
+
+                print("candidate is N/", q[0]**i, "*", Q, "=", candidate)
+
+                K = T.index(candidate)
+
+                print("index is", K)
+
+                Ks.append(K)   # add to the list of ks ()
+
+                Q = self.add(Q, self.neg(self.multP(P, K*q[0]**(i-1)))) ##!!
+
+                print("Q1 is", Q, "-", K, "*",q[0], "^", i-1, "*", P)
+
+            sum = 0
+            for k in Ks:
+
+                sum += k*q[0]**Ks.index(k)
+                sum %= q[0]**q[1]
+
+            print(sum, "mod ", q[0]**q[1], "= ", sum)
+
+
+
+
+
+
+
+
+
+
 
 
 
