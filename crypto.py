@@ -1,5 +1,6 @@
 import math
 import numbertheory
+from numbertheory import *
 
 ####### HELPER FUNCTIONS #######
 
@@ -50,17 +51,6 @@ def listQRs(mod):
 
     return squareList
 
-# evaluates the legendre symbol given a and p
-def legendre(a, p):
-
-    if a == 0: return 0
-
-    symbol = pow(a, int((p-1)/2), p)
-
-    if symbol == p-1: return -1
-
-    return symbol
-
 
 # returns the modular square root of a number if it exists
 def sqrtMod(a, mod):
@@ -77,158 +67,7 @@ def sqrtMod(a, mod):
 
     return answerList
 
-
-def legendre(a, p):
-
-    if a == 0: return 0
-
-    ls = pow(a, int((p - 1) / 2), p)
-
-    if ls == p - 1:
-        return -1 
-
-    else: return ls
-
-
-# a faster implementation, Tonnelli-Shanks, mod a prime (credit to StackExchange)
-def sqrtModP(a, p):
-
-    a %= p
-
-    # Simple case
-    if a == 0: return [0]
-    if p == 2: return [a]
-
-    # Check solution existence on odd prime
-    if legendre_symbol(a, p) != 1:
-        return []
-
-    # Simple case
-    if p % 4 == 3:
-        x = pow(a, (p + 1)//4, p)
-        return [x, p-x]
-
-    # Factor p-1 on the form q * 2^s (with Q odd)
-    q, s = p - 1, 0
-    while q % 2 == 0:
-        s += 1
-        q //= 2
-
-    # Select a z which is a quadratic non resudue modulo p
-    z = 1
-    while legendre_symbol(z, p) != -1:
-        z += 1
-    c = pow(z, q, p)
-
-    # Search for a solution
-    x = pow(a, (q + 1)//2, p)
-    t = pow(a, q, p)
-    m = s
-    while t != 1:
-        # Find the lowest i such that t^(2^i) = 1
-        i, e = 0, 2
-        for i in range(1, m):
-            if pow(t, e, p) == 1:
-                break
-            e *= 2
-
-        # Update next value to iterate
-        b = pow(c, int(2**(m - i - 1)), p)
-        x = (x * b) % p
-        t = (t * b * b) % p
-        c = (b * b) % p
-        m = i
-
-    return [x, p-x]
-
-
-def modular_sqrt(a, p):
-    """ Find a quadratic residue (mod p) of 'a'. p
-        must be an odd prime.
-
-        Solve the congruence of the form:
-            x^2 = a (mod p)
-        And returns x. Note that p - x is also a root.
-
-        0 is returned is no square root exists for
-        these a and p.
-
-        The Tonelli-Shanks algorithm is used (except
-        for some simple cases in which the solution
-        is known from an identity). This algorithm
-        runs in polynomial time (unless the
-        generalized Riemann hypothesis is false).
-    """
-    # Simple cases
-    #
-    if legendre_symbol(a, p) != 1:
-        return 0
-    elif a == 0:
-        return 0
-    elif p == 2:
-        return p
-    elif p % 4 == 3:
-        return pow(a, int((p + 1) / 4), p)
-
-    # Partition p-1 to s * 2^e for an odd s (i.e.
-    # reduce all the powers of 2 from p-1)
-    #
-    s = p - 1
-    e = 0
-    while s % 2 == 0:
-        s //= 2
-        e += 1
-
-    # Find some 'n' with a legendre symbol n|p = -1.
-    # Shouldn't take long.
-    #
-    n = 2
-    while legendre_symbol(n, p) != -1:
-        n += 1
-
-    # Here be dragons!
-    # Read the paper "Square roots from 1; 24, 51,
-    # 10 to Dan Shanks" by Ezra Brown for more
-    # information
-    #
-
-    # x is a guess of the square root that gets better
-    # with each iteration.
-    # b is the "fudge factor" - by how much we're off
-    # with the guess. The invariant x^2 = ab (mod p)
-    # is maintained throughout the loop.
-    # g is used for successive powers of n to update
-    # both a and b
-    # r is the exponent - decreases with each update
-    #
-    x = pow(a, int((s + 1) / 2), p)
-    b = pow(a, s, p)
-    g = pow(n, s, p)
-
-    # x = (a**((s+1)/2))%p
-    # b = (a**s)%p
-    # g = (n**s)%p
-
-    r = e
-
-    while True:
-        t = b
-        m = 0
-        for m in range(r):
-            if t == 1:
-                break
-            t = pow(t, 2, p)
-
-        if m == 0:
-            return x
-
-        gs = pow(g, 2 ** (r - m - 1), p)
-        g = (gs * gs) % p
-        x = (x * gs) % p
-        b = (b * g) % p
-        r = m
-
-
+# credit to martin-thoma.com
 def legendre_symbol(a, p):
 
     if a >= p or a < 0:
@@ -258,6 +97,7 @@ def legendre_symbol(a, p):
             return (-1)*legendre_symbol(p, a)
 
 # returns a list of prime factors
+# credit to stackoverflow.com/questions/16996217/prime-factorization-list
 def primeFactors(n):
 
     primes = list()
@@ -274,7 +114,8 @@ def primeFactors(n):
 
     return primes
 
-
+# creates a proper set of primes involved in the prime factorization of n
+# each member is a double: (base, power)
 def groupPrimes(n):
 
     groups = list()
@@ -330,14 +171,15 @@ def isPrime(number):
 
 def E_Factor(n):
 
+    print("Factor of", n)
     if isPrime(n): 
 
         print(n)
         return
 
-    point = (1,1,1)
-    curve = EllipticCurve(5, -5, 455839)
-    # curve = findB(point, 5, n)
+    point = (1,3,1)
+    #curve = EllipticCurve(5, -5, n)
+    curve = findB(point, 4, n)
     factor = curve.factor(point, math.ceil(math.log(n)))
 
     print(factor)
@@ -366,7 +208,7 @@ def findB(point, a, mod):
 
         if testCurve.onCurve(point):
 
-            # testCurve.printme()
+            #testCurve.printme()
             return testCurve
 
         b += 1
@@ -403,7 +245,8 @@ class EllipticCurve:
 
         x, y = point[0], point[1]
 
-        if y in sqrtMod(x**3 + self.a*x + self.b, self.mod): return True
+        if y in sqrt_mod_m(x**3 + self.a*x + self.b, self.mod): 
+            return True
 
         # if y in sqrtModP(x**3 + self.a*x + self.b, self.mod): return True
 
@@ -428,6 +271,9 @@ class EllipticCurve:
 
         if point1 != point2:
 
+            if modinv(point1[0] - point2[0], self.mod)[0] == False:
+                return (0, modinv(point2[0] - point1[0], self.mod)[1], 2) 
+
             if point1[0] != point2[0]:
 
                 slope = (point2[1] - point1[1]) * modinv(point2[0] - point1[0], self.mod)[1]
@@ -436,8 +282,8 @@ class EllipticCurve:
 
         if point1 == point2:
 
-            if modinv(2*point1[1], self.mod)[0] == False: 
-                return (0, (modinv(2*point1[1], self.mod)[1]), 2)
+            if modinv((2*point1[1])%self.mod, self.mod)[0] == False: 
+                return (0, modinv(2*point1[1], self.mod)[1], 2)
 
             slope = (3*(point1[0]**2) + self.a) * modinv(2*point1[1], self.mod)[1]          
 
@@ -485,6 +331,7 @@ class EllipticCurve:
             leftovers = k - 2**doubles
 
             temp = self.add(temp, self.multP(point, leftovers))
+            if temp[2] == 2: return temp
 
         return temp
 
@@ -595,24 +442,27 @@ class EllipticCurve:
 
     def factor(self, point, b):
 
-        for i in range(b):
+        for i in range(0, b):
             #print(i)
-            # print(math.factorial(i))
+            #print(math.factorial(i))
             temp = self.multP(point, math.factorial(i))
             #print(temp)
             if temp[2] == 2: 
 
                 if temp[1] != self.mod:
 
-                    #print(temp[1])
-                    return(temp[1])
+                    return temp[1]
                     break
+                    # return(temp[1])
                     #new = EllipticCurve(self.a, self.b, self.mod / temp[1])
 
                 if temp[1] == self.mod:
 
                     print(temp[1], "is a trivial factor.")
                     return False
+
+        return False
+        #print("Nothing broken")
 
 
 
