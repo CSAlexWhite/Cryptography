@@ -1,6 +1,8 @@
 import math
 import numbertheory
 from numbertheory import *
+import multiprocessing
+from multiprocessing import Pool
 
 ####### HELPER FUNCTIONS #######
 
@@ -169,35 +171,69 @@ def isPrime(number):
         return False  
 
 
-def E_Factor(n):
+homework = 495960937377360604920383605744987602701101399399359259262820733407167
+def multE_Factor(n):
+
+    # point = (1, 2)
+
+    # jobs = []
+    # for i in range(15):
+
+    #     factors = list()
+    #     print("Curve", i, "\n")
+
+    #     p = multiprocessing.Process(target = E_Factor(factors, i, n))
+    #     jobs.append(p)
+    #     p.start()
+
+    #     del factors[:]
+
+    outcomes = list()
+    for i in range(15): outcomes.append([])
+
+    pool = Pool(processes = 15)
+    results = [pool.apply(E_Factor, args = (outcomes[i], i, n)) for i in range(5)]
+    print(results)
+    print(outcomes)
+
+def e_factorize(a, n):
+
+    factors = []
+    E_Factor(factors, a, n)
+    #print(factors)
+    
+    finalFactors = []
+    for i in range(len(factors)):
+           
+        if not isPrime(factors[i]):
+            if factors[i] > 100:
+                finalFactors.extend(e_factorize(a+1, factors[i]))
+            else: finalFactors.extend(primeFactors(factors[i]))
+        else: finalFactors.append(factors[i])
+    finalFactors.sort()
+    #print(finalFactors)
+    
+    return finalFactors
+    
+    
+def E_Factor(factors, a, n):
 
     print("Factor of", n)
     if isPrime(n): 
-
-        print(n)
+        factors.append(n)
         return
 
     point = (1,3,1)
-    #curve = EllipticCurve(5, -5, n)
-    curve = findB(point, 4, n)
+    curve = findB(point, a, n)
     factor = curve.factor(point, math.ceil(math.log(n)))
 
-    print(factor)
-
     if factor != False:
-        E_Factor(n//factor)
+        factors.append(factor)
+        E_Factor(factors, a, n//factor)
 
-
-def multE_Factor(b, n):
-
-    from multiprocessing import pool
-
-    point = (1, 2)
-
-    for i in range(50):
-
-        pool.apply(findB(point, 1, i, n).factor(b))
-
+    if factor == False:
+        factors.append(n)
+        #print(n)
 
 def findB(point, a, mod):
 
@@ -208,7 +244,7 @@ def findB(point, a, mod):
 
         if testCurve.onCurve(point):
 
-            #testCurve.printme()
+            # testCurve.printme()
             return testCurve
 
         b += 1
@@ -456,10 +492,13 @@ class EllipticCurve:
                     # return(temp[1])
                     #new = EllipticCurve(self.a, self.b, self.mod / temp[1])
 
-                if temp[1] == self.mod:
+                if isPrime(temp[1]):
+                    if temp[1] == self.mod:
 
-                    print(temp[1], "is a trivial factor.")
-                    return False
+                        print(temp[1], "is a trivial factor.")
+                        return False
+                        
+                    else: return temp[1]
 
         return False
         #print("Nothing broken")
