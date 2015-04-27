@@ -4,6 +4,8 @@ from numbertheory import *
 import multiprocessing
 from multiprocessing import Pool
 import gc
+import numpy as np
+from numpy.polynomial import polynomial as poly
 
 ####### HELPER FUNCTIONS #######
 
@@ -510,6 +512,142 @@ class EllipticCurve:
         #print("Nothing broken")
 
 
+def bitwise_xor(a, b):
+    
+    c = list()
+    for i in range(len(a)):
+        
+        c.append((a[i] + b[i])%2)
+        
+    return c
+    
+    
+def linear_complexity(sequence, p):
+       
+    Bx = make_bin_poly([0])             # make these into polynomials 
+    Cx = make_bin_poly([0])
+    Tx = make_bin_poly([0]) 
+    
+    L, N = 0, 0                         # complexity and test length start at 0
+    s = sequence    
+         
+    m = -1      
+    n = len(sequence)
+    
+    d = 0                               # discrepancy   
+    
+    while N < n:
+        
+        if p: print("----------------\nN =", N, "\n")
+
+        if N==0:
+            
+            d = s[0]
+            if p: print("s 0 (", s[0], ")")
+        
+        else:
+            
+            d = 0
+            for i in range(0, L+1):
+                             
+                if p: print("s", N-i,"(", s[N-i], ") * ", "c", (i), "(", Cx[i], ") = ", s[N-i] * Cx[i])
+               
+                d += s[N-i] * Cx[i]           # calculate the discrepancy
+                            
+            d%=2
+        
+        if p: print('\nd = ', d)
+        
+        if d==1:
+            
+            x = make_bin_poly([N-m])    # create x**(N-m)
+            
+            Tx = Cx
+            
+            Cx = addpoly(Cx, mulpoly(Bx,x)) 
+            
+            if p: print('\nC(x) = \n', Cx, '\n')
+            
+            if L <= N/2:
+                
+                L = N + 1 - L
+                m = N
+                Bx = Tx
+        
+        N += 1
+        
+    print("\nCOMPLEXITY = ", L)
+    print("TAP POLYNOMIAL = \n", Cx) 
+    
+    
+def make_bin_poly(terms):    
+    
+    poly = [0]*(terms[0]+1)             # length is the degree + 1
+    #print(poly)
+    
+    for i in terms:
+        poly[len(poly)-(i+1)] = 1 
+        
+    #print(poly)
+    realpoly = np.poly1d(poly)
+    
+    return realpoly
+    
+    
+def mulpoly(a, b):
+    
+    c = np.polymul(a, b)
+    
+    return np.poly1d(c.coeffs % 2)    
+    
+
+def addpoly(a, b):
+    
+    c = a + b    
+    
+    return np.poly1d(c.coeffs % 2)
+
+    
+class LFSR:
+    
+    def __init__(self, fill, taps):
+
+        self.fill = fill
+        self.taps = taps
+        self.output = list()
+        self.register = list()
+        
+        for i in fill:
+            
+            self.register.append(fill[i])
+           
+           
+    def putout(self, bits):
+        
+        next = 0
+        for i in range(bits):
+            
+            next = self.xor(self.register, self.taps)        
+            self.output.append(self.register[0])
+            #print(register)
+            self.register.pop(0)
+            self.register.append(next)
+            
+        return self.output
+               
+               
+    def xor(self, fill, taps):
+        
+        sum = 0
+        for i in taps:
+            
+            sum += fill[i]
+        
+        sum %= 2
+        
+        return sum
+        
+    
 
 
 
