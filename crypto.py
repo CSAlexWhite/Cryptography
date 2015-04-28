@@ -522,7 +522,7 @@ def bitwise_xor(a, b):
     return c
     
     
-def linear_complexity(sequence, p):
+def linear_complexity(sequence, debug):
        
     Bx = make_bin_poly([0])             # make these into polynomials 
     Cx = make_bin_poly([0])
@@ -538,25 +538,25 @@ def linear_complexity(sequence, p):
     
     while N < n:
         
-        if p: print("----------------\nN =", N, "\n")
+        if debug: print("----------------\nN =", N, "\n")
 
         if N==0:
             
             d = s[0]
-            if p: print("s 0 (", s[0], ")")
+            if debug: print("s 0 (", s[0], ")")
         
         else:
             
             d = 0
             for i in range(0, L+1):
                              
-                if p: print("s", N-i,"(", s[N-i], ") * ", "c", (i), "(", Cx[i], ") = ", s[N-i] * Cx[i])
+                if debug: print("s", N-i,"(", s[N-i], ") * ", "c", (i), "(", Cx[i], ") = ", s[N-i] * Cx[i])
                
                 d += s[N-i] * Cx[i]           # calculate the discrepancy
                             
             d%=2
         
-        if p: print('\nd = ', d)
+        if debug: print('\nd = ', d)
         
         if d==1:
             
@@ -566,7 +566,7 @@ def linear_complexity(sequence, p):
             
             Cx = addpoly(Cx, mulpoly(Bx,x)) 
             
-            if p: print('\nC(x) = \n', Cx, '\n')
+            if debug: print('\nC(x) = \n', Cx, '\n')
             
             if L <= N/2:
                 
@@ -606,27 +606,59 @@ def addpoly(a, b):
     c = a + b    
     
     return np.poly1d(c.coeffs % 2)
+    
+    
+def xorStreams(a, b):
 
+    print(len(a))
+    print(len(b))
+    
+    #if len(a) != len(b): print("Sizes not equal")  
+    
+    C = list()
+    
+    for i in range(0, len(a)):
+        
+        C.append( (a[i]+b[i])%2)
+        
+    return C
+ 
+ 
+def testC(A, B, length):
+
+    linear_complexity(xorStreams(A.putout(length, False), B.putout(length, False)), False) 
+      
     
 class LFSR:
     
     def __init__(self, fill, taps):
 
         self.fill = fill
-        self.taps = taps
+        self.taps = list(taps)
+
+        for i in range(0, len(self.taps)):
+            
+            self.taps[i] -= 1
+            
         self.output = list()
         self.register = list()
         
         for i in fill:
             
             self.register.append(fill[i])
+            
+        print(self.taps)
            
            
-    def putout(self, bits):
+    def putout(self, bits, printRegisters):
         
+        self.output = list()
         next = 0
         for i in range(bits):
             
+            #print(i)
+            
+            if printRegisters: print(self.register)
             next = self.xor(self.register, self.taps)        
             self.output.append(self.register[0])
             #print(register)
@@ -640,8 +672,8 @@ class LFSR:
         
         sum = 0
         for i in taps:
-            
-            sum += fill[i]
+                       
+            sum += fill[len(fill)-i-1]
         
         sum %= 2
         
